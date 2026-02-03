@@ -79,8 +79,16 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else if (source == btnEnvoyer) {
                 if (!champCouriel.getText().toString().isEmpty()){
-                    solde -= Integer.parseInt(champTransfert.getText().toString());
-                    champSolde.setText(String.valueOf(solde));
+                    int temp = solde - Integer.parseInt(champTransfert.getText().toString());
+                    if (temp < 0){
+                        solde = temp;
+                        champSolde.setText(String.valueOf(solde));
+                    }
+                    else {
+                        champTransfert.setHint("Solde indisponible ");
+                    }
+
+
                 }
                 else {
                     champCouriel.setHint("Indiquer un destinataire");
