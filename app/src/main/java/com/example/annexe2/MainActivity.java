@@ -1,11 +1,17 @@
 package com.example.annexe2;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,19 +19,25 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
     //etape1
     Ecouteur ec;
-    Button btnValider;
     Button btnEnvoyer;
-    EditText champNomCompte;
+    Spinner spinnerNom;
     EditText champCouriel;
     EditText champTransfert;
     TextView champSolde;
-    ArrayList<String> choix;
     int solde;
+    ArrayList<String> choix;
+    DecimalFormat df  = new DecimalFormat("#,##0.00$");
+     HashMap<String, Compte> hashMap = new HashMap<>();
+     Compte compteChoisi;
+
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,63 +50,85 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        btnValider = findViewById(R.id.valider);
         btnEnvoyer = findViewById(R.id.envoyer);
-        champNomCompte = findViewById(R.id.editTextDe);
+        spinnerNom = findViewById(R.id.spinnerNom);
         champSolde = findViewById(R.id.champSolde);
         champCouriel = findViewById(R.id.champCouriel);
         champTransfert = findViewById(R.id.champTransfert);
 
         choix = new ArrayList<>();
-        choix.add("CHEQUE");
-        choix.add("EPARGNE");
-        choix.add("EPARGNEPLUS");
+        hashMap.put("Cheque", new Compte("Cheque", 1000));
+        hashMap.put("Epargne",new Compte("Epargne", 10000));
+        hashMap.put("Epargne Plus", new Compte("Epargne Plus", 20000));
+        choix.addAll(hashMap.keySet()); //place toute les clées dans le spinner
+
+
+        ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, choix);
+        spinnerNom.setAdapter(adapter);
+
 
 
         //etape1
         ec = new Ecouteur();
         //etape2
-        btnValider.setOnClickListener(ec);
         btnEnvoyer.setOnClickListener(ec);
+        spinnerNom.setOnItemSelectedListener(ec);
 
     }
 
 
-    private class Ecouteur implements View.OnClickListener {
+    private class Ecouteur implements View.OnClickListener, AdapterView.OnItemSelectedListener {
 
 
         @Override
         public void onClick(View source) {
             // quand on click on est ici
-            if (source == btnValider) {
-                String nomCompte = champNomCompte.getText().toString();
-                nomCompte = nomCompte.trim().toUpperCase();
 
-                if (choix.contains(nomCompte)) {
-                    solde = 500;
-                    champSolde.setText(String.valueOf(solde));
-                } else {
-                    champSolde.setText("Pas un bon nom de compte");
-                    champNomCompte.setText("");
+            if (!champCouriel.getText().toString().trim().isEmpty() && champCouriel.getText().toString().matches("[a-zA-Z]+@[a-zA-Z]+\\.[a-zA-Z]+")){
+                if(compteChoisi.transfert(Double.parseDouble(champTransfert.getText().toString()))) {
+                    champSolde.setText(df.format(compteChoisi.getSolde()));
+                    champTransfert.setText("");
                 }
-            } else if (source == btnEnvoyer) {
-                if (!champCouriel.getText().toString().isEmpty()){
-                    int temp = solde - Integer.parseInt(champTransfert.getText().toString());
-                    if (temp < 0){
-                        solde = temp;
-                        champSolde.setText(String.valueOf(solde));
-                    }
-                    else {
-                        champTransfert.setHint("Solde indisponible ");
-                    }
-
+                else{
+                    champTransfert.setText("");
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Attention")
+                            .setMessage("Il manque de fonds")
+                            .show();
 
                 }
-                else {
-                    champCouriel.setHint("Indiquer un destinataire");
-                }
+
             }
+            else {
+                champCouriel.setText("Vous devez indiquez un courriel");
+                champTransfert.setText(0);
+            }
+
+
+        }
+
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            // méthode Jacob
+            String txt = parent.getAdapter().getItem(position).toString();
+            //méthode ludo
+            String txt1 = (String) parent.getSelectedItem();
+            //méthode emile
+            String txt2 = choix.get(position);
+            //méthode eric
+            TextView temp = (TextView) view;
+            String txt3 = temp.getText().toString();
+
+            Toast.makeText(MainActivity.this,txt,Toast.LENGTH_SHORT).show();
+
+            compteChoisi =  hashMap.get(txt);
+            champSolde.setText(df.format(compteChoisi.getSolde()));
+
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
 
         }
     }
-}
+    }
